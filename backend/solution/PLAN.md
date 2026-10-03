@@ -3,6 +3,11 @@
 Source of truth: [../REQUIREMENTS.md](../REQUIREMENTS.md), [../CRM.md](../CRM.md), [../START-HERE.md](../START-HERE.md).
 Work top to bottom. Tick boxes as you go. Timeboxes total 42 min, leaving 3 min of slack. The seed-only endpoints come before the CRM work, so tested endpoints exist early even if the CRM steps overrun. If you run out of time, list what's left as unfinished, but never cut the notes.
 
+Useful Claude generations:
+PRD: https://claude.ai/artifact/LbBHqAV368e43jRrkvrmJq#ffcf3ea7-5639.maz3463jh4r.3503
+Design Diagram: https://claude.ai/artifact/Ny8fTzxDir4JF628dB61VC
+Split Diagram between Pair Programmer: https://claude.ai/artifact/WNWnQR1QBTjpJFuMi6hAHQ
+
 ## Scope
 
 | In scope | Out of scope (list as unfinished in README) |
