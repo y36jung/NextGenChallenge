@@ -2,14 +2,9 @@ import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { send, sendError } from './http.mjs';
 import { getPortfolioSummary } from './summary.mjs';
+import { config } from './config.mjs';
 
-export const config = {
-  port: Number(process.env.PORT ?? 3000),
-  crmBaseUrl: process.env.CRM_BASE_URL ?? 'http://localhost:4002',
-  crmTimeoutMs: Number(process.env.CRM_TIMEOUT_MS ?? 3000),
-  cacheTtlSeconds: Number(process.env.CACHE_TTL_SECONDS ?? 30),
-  authToken: process.env.AUTH_TOKEN ?? 'superday-demo-token',
-};
+export { config };
 
 // Each route: method, path pattern, handler(req, res, params).
 const routes = [

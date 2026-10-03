@@ -9,7 +9,7 @@ Tick a box only when its "done when" condition holds. Tick only boxes in your ow
 | | **Person A: seed, HTTP, docs** | **Person B: CRM and cache** |
 |---|---|---|
 | PLAN steps | 1 Scaffold, 2 Auth, 3 Holdings, 4 Allocation, 7 README | 5 CRM integration, 6 Caching, manual checks |
-| Owns these files | `package.json`, `src/server.mjs`, `src/http.mjs`, `src/auth.mjs`, `src/data.mjs`, `src/holdings.mjs`, `test/auth.test.mjs`, `test/holdings.test.mjs`, `test/allocation.test.mjs`, `test/http.test.mjs`, `README.md` | `src/crm.mjs`, `src/cache.mjs`, `src/summary.mjs` (after A's stub), `test/crm.test.mjs`, `test/cache.test.mjs` |
+| Owns these files | `package.json`, `src/config.mjs` (B reads it), `src/server.mjs`, `src/http.mjs`, `src/auth.mjs`, `src/data.mjs`, `src/holdings.mjs`, `test/auth.test.mjs`, `test/holdings.test.mjs`, `test/allocation.test.mjs`, `test/http.test.mjs`, `README.md` | `src/crm.mjs`, `src/cache.mjs`, `src/summary.mjs` (after A's stub), `test/crm.test.mjs`, `test/cache.test.mjs` |
 | Routes | `/health`, `/portfolios/:id/holdings`, `/portfolios/:id/allocation` | Logic behind `GET /portfolios/:id` |
 | Branch | `a-seed` | `b-crm` |
 | Claude agent | `seed-lane` | `crm-lane` |
