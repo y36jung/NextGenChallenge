@@ -36,7 +36,7 @@ export async function getPortfolioSummary(id, { now = Date.now } = {})
 req.caller = { id: 'demo' }
 ```
 
-- [ ] Both people agree on the contract above (change it here before coding, never after).
+- [x] Both people agree on the contract above (change it here before coding, never after).
 
 ## Timeline
 
@@ -91,10 +91,10 @@ req.caller = { id: 'demo' }
 ## Checklist: Person B
 
 ### B0. Mapping, in parallel with A's scaffold
-- [ ] Pure `mapCrmRecord(payload, portfolioId)` in `crm.mjs`.
-- [ ] Finds `acct_ref` in `accounts` **or** `relationships.accounts`; never assumes the first account.
-- [ ] Reports a missing or `null` mapped field as incomplete; no `Number(null)`, `?? 0` or `* 1`.
-- [ ] **Done when:** `test/crm.test.mjs` passes for the standard shape, the nested shape, the incomplete record, and the account-not-first case (P-9002 gives 500).
+- [x] Pure `mapCrmRecord(payload, portfolioId)` in `crm.mjs`.
+- [x] Finds `acct_ref` in `accounts` **or** `relationships.accounts`; never assumes the first account.
+- [x] Reports a missing or `null` mapped field as incomplete; no `Number(null)`, `?? 0` or `* 1`.
+- [x] **Done when:** `test/crm.test.mjs` passes for the standard shape, the nested shape, the incomplete record, and the account-not-first case (P-9002 gives 500).
 
 ### B1. CRM client and route (PLAN Step 5)
 - [ ] `fetch` to `{CRM_BASE_URL}/crm/portfolios/:id` with an abort timeout of `CRM_TIMEOUT_MS`. Never sends `?mode=`.
