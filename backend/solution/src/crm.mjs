@@ -39,3 +39,37 @@ export function mapCrmRecord(payload, portfolioId) {
   for (const [name, , fieldValue] of fields) value[name] = fieldValue;
   return { ok: true, value };
 }
+
+// Calls the CRM for one portfolio and maps the result. Never throws, never sends ?mode=.
+// Returns mapCrmRecord's result, or { ok: false, reason: 'not_found' | 'unavailable' | 'timeout' | 'incomplete' }.
+// One timeout signal covers both the response headers and reading the body.
+export async function fetchCrm(id, { baseUrl, timeoutMs, fetch = globalThis.fetch }) {
+  const signal = AbortSignal.timeout(timeoutMs);
+  const url = `${baseUrl}/crm/portfolios/${encodeURIComponent(id)}`;
+  let text;
+  try {
+    const res = await fetch(url, { signal, headers: { accept: 'application/json' } });
+    if (res.status === 404) {
+      await res.body?.cancel().catch(() => {});
+      return { ok: false, reason: 'not_found', missing: [] };
+    }
+    if (!res.ok) {
+      await res.body?.cancel().catch(() => {});
+      return { ok: false, reason: 'unavailable' };
+    }
+    text = await res.text();
+  } catch (err) {
+    if (signal.aborted || err?.name === 'TimeoutError' || err?.name === 'AbortError') {
+      return { ok: false, reason: 'timeout' };
+    }
+    return { ok: false, reason: 'unavailable' };
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(text);
+  } catch {
+    return { ok: false, reason: 'incomplete', missing: ['response body (not JSON)'] };
+  }
+  return mapCrmRecord(payload, id);
+}

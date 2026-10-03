@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { send, sendError } from './http.mjs';
 import { getPortfolioSummary } from './summary.mjs';
 import { config } from './config.mjs';
+import { authenticate, isProtected } from './auth.mjs';
 
 export { config };
 
@@ -14,6 +15,12 @@ const routes = [
 
 export async function handle(req, res) {
   const { pathname } = new URL(req.url, 'http://localhost');
+  // Auth runs before any route logic on protected paths.
+  if (isProtected(pathname)) {
+    const auth = authenticate(req.headers.authorization, config.authToken);
+    if (!auth.ok) return sendError(res, 'unauthorized', auth.message);
+    req.caller = auth.caller;
+  }
   for (const [method, pattern, handler] of routes) {
     const match = req.method === method && pattern.exec(pathname);
     if (match) return handler(req, res, match.slice(1).map(decodeURIComponent));
