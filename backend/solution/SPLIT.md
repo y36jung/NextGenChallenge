@@ -54,12 +54,12 @@ req.caller = { id: 'demo' }
 ## Checklist: Person A
 
 ### A0. Scaffold (PLAN Step 1), the blocking step for B
-- [ ] `package.json` has `"type": "module"` and scripts `start` and `test` (`node --test`).
-- [ ] `src/http.mjs` exports `ERROR_CODES`, `errorBody` and `send`, with every code from the contract.
-- [ ] `src/data.mjs` loads `../fixtures/seed.json` and exposes lookups for portfolios and holdings.
-- [ ] `src/server.mjs` reads config from environment variables (`PORT`, `CRM_BASE_URL`, `CRM_TIMEOUT_MS`, `CACHE_TTL_SECONDS`, `AUTH_TOKEN`), and unknown routes return `not_found_route`.
-- [ ] `GET /health` returns `{ "status": "ok" }`.
-- [ ] `src/summary.mjs` stub returns 501, and `GET /portfolios/:id` is wired to it.
+- [x] `package.json` has `"type": "module"` and scripts `start` and `test` (`node --test`).
+- [x] `src/http.mjs` exports `ERROR_CODES`, `errorBody` and `send`, with every code from the contract.
+- [x] `src/data.mjs` loads `../fixtures/seed.json` and exposes lookups for portfolios and holdings.
+- [x] `src/server.mjs` reads config from environment variables (`PORT`, `CRM_BASE_URL`, `CRM_TIMEOUT_MS`, `CACHE_TTL_SECONDS`, `AUTH_TOKEN`), and unknown routes return `not_found_route`.
+- [x] `GET /health` returns `{ "status": "ok" }`.
+- [x] `src/summary.mjs` stub returns 501, and `GET /portfolios/:id` is wired to it.
 - [ ] **Done when:** `npm start` serves `/health`, `npm test` runs, and the branch is pushed. Tell B.
 
 ### A1. Auth (PLAN Step 2)

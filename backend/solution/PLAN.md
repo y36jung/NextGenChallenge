@@ -86,11 +86,11 @@ Keep the calculation and mapping modules free of HTTP. Unit tests run against th
 
 ## Step 1: Scaffold (5 min)
 
-- [ ] Create the layout above and `package.json` (`"type": "module"`, scripts `start` and `test`).
-- [ ] `data.mjs` loads `../fixtures/seed.json` and exposes lookups for portfolios and their holdings.
-- [ ] `server.mjs`: a small router, the shared `{ error, message }` helper with lowercase codes, a JSON response helper, and `not_found_route` for unknown routes.
-- [ ] Config from environment variables with defaults: `PORT=3000`, `CRM_BASE_URL=http://localhost:4002`, `CRM_TIMEOUT_MS=3000`, `CACHE_TTL_SECONDS=30`, `AUTH_TOKEN=superday-demo-token`.
-- [ ] `GET /health` returns `{ "status": "ok" }`.
+- [x] Create the layout above and `package.json` (`"type": "module"`, scripts `start` and `test`).
+- [x] `data.mjs` loads `../fixtures/seed.json` and exposes lookups for portfolios and their holdings.
+- [x] `server.mjs`: a small router, the shared `{ error, message }` helper with lowercase codes, a JSON response helper, and `not_found_route` for unknown routes.
+- [x] Config from environment variables with defaults: `PORT=3000`, `CRM_BASE_URL=http://localhost:4002`, `CRM_TIMEOUT_MS=3000`, `CACHE_TTL_SECONDS=30`, `AUTH_TOKEN=superday-demo-token`.
+- [x] `GET /health` returns `{ "status": "ok" }`.
 
 **Done when:** `npm start` serves `/health`, and `npm test` runs (even if there are no tests yet).
 
