@@ -2,14 +2,10 @@ import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { send, sendError } from './http.mjs';
 import { getPortfolioSummary } from './summary.mjs';
+import { config } from './config.mjs';
+import { authenticate, isProtected } from './auth.mjs';
 
-export const config = {
-  port: Number(process.env.PORT ?? 3000),
-  crmBaseUrl: process.env.CRM_BASE_URL ?? 'http://localhost:4002',
-  crmTimeoutMs: Number(process.env.CRM_TIMEOUT_MS ?? 3000),
-  cacheTtlSeconds: Number(process.env.CACHE_TTL_SECONDS ?? 30),
-  authToken: process.env.AUTH_TOKEN ?? 'superday-demo-token',
-};
+export { config };
 
 // Each route: method, path pattern, handler(req, res, params).
 const routes = [
@@ -19,6 +15,12 @@ const routes = [
 
 export async function handle(req, res) {
   const { pathname } = new URL(req.url, 'http://localhost');
+  // Auth runs before any route logic on protected paths.
+  if (isProtected(pathname)) {
+    const auth = authenticate(req.headers.authorization, config.authToken);
+    if (!auth.ok) return sendError(res, 'unauthorized', auth.message);
+    req.caller = auth.caller;
+  }
   for (const [method, pattern, handler] of routes) {
     const match = req.method === method && pattern.exec(pathname);
     if (match) return handler(req, res, match.slice(1).map(decodeURIComponent));

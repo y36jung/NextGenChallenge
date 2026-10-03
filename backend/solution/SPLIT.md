@@ -9,7 +9,7 @@ Tick a box only when its "done when" condition holds. Tick only boxes in your ow
 | | **Person A: seed, HTTP, docs** | **Person B: CRM and cache** |
 |---|---|---|
 | PLAN steps | 1 Scaffold, 2 Auth, 3 Holdings, 4 Allocation, 7 README | 5 CRM integration, 6 Caching, manual checks |
-| Owns these files | `package.json`, `src/server.mjs`, `src/http.mjs`, `src/auth.mjs`, `src/data.mjs`, `src/holdings.mjs`, `test/auth.test.mjs`, `test/holdings.test.mjs`, `test/allocation.test.mjs`, `test/http.test.mjs`, `README.md` | `src/crm.mjs`, `src/cache.mjs`, `src/summary.mjs` (after A's stub), `test/crm.test.mjs`, `test/cache.test.mjs` |
+| Owns these files | `package.json`, `src/config.mjs` (B reads it), `src/server.mjs`, `src/http.mjs`, `src/auth.mjs`, `src/data.mjs`, `src/holdings.mjs`, `test/auth.test.mjs`, `test/holdings.test.mjs`, `test/allocation.test.mjs`, `test/http.test.mjs`, `README.md` | `src/crm.mjs`, `src/cache.mjs`, `src/summary.mjs` (after A's stub), `test/crm.test.mjs`, `test/cache.test.mjs` |
 | Routes | `/health`, `/portfolios/:id/holdings`, `/portfolios/:id/allocation` | Logic behind `GET /portfolios/:id` |
 | Branch | `a-seed` | `b-crm` |
 | Claude agent | `seed-lane` | `crm-lane` |
@@ -60,13 +60,13 @@ req.caller = { id: 'demo' }
 - [x] `src/server.mjs` reads config from environment variables (`PORT`, `CRM_BASE_URL`, `CRM_TIMEOUT_MS`, `CACHE_TTL_SECONDS`, `AUTH_TOKEN`), and unknown routes return `not_found_route`.
 - [x] `GET /health` returns `{ "status": "ok" }`.
 - [x] `src/summary.mjs` stub returns 501, and `GET /portfolios/:id` is wired to it.
-- [ ] **Done when:** `npm start` serves `/health`, `npm test` runs, and the branch is pushed. Tell B.
+- [x] **Done when:** `npm start` serves `/health`, `npm test` runs, and the branch is pushed. Tell B.
 
 ### A1. Auth (PLAN Step 2)
-- [ ] Protects `/portfolios/*` and `/clients/*`; `/health` stays open.
-- [ ] Missing header, malformed header (`Token abc`, empty token), and wrong token each return 401 `unauthorized`, never a 500.
-- [ ] A valid token sets `req.caller`.
-- [ ] **Done when:** `test/auth.test.mjs` covers all four cases and passes.
+- [x] Protects `/portfolios/*` and `/clients/*`; `/health` stays open.
+- [x] Missing header, malformed header (`Token abc`, empty token), and wrong token each return 401 `unauthorized`, never a 500.
+- [x] A valid token sets `req.caller`.
+- [x] **Done when:** `test/auth.test.mjs` covers all four cases and passes.
 
 ### A2. Holdings (PLAN Step 3)
 - [ ] Pure function in `holdings.mjs`. The total is the sum of the holdings' market values.
@@ -97,10 +97,10 @@ req.caller = { id: 'demo' }
 - [x] **Done when:** `test/crm.test.mjs` passes for the standard shape, the nested shape, the incomplete record, and the account-not-first case (P-9002 gives 500).
 
 ### B1. CRM client and route (PLAN Step 5)
-- [ ] `fetch` to `{CRM_BASE_URL}/crm/portfolios/:id` with an abort timeout of `CRM_TIMEOUT_MS`. Never sends `?mode=`.
-- [ ] CRM 404 or no matching account → 404 `not_found`; 5xx → 503; timeout → 504; incomplete → 502.
-- [ ] `summary.mjs` replaces A's stub and returns `{ status, body }`, using `errorBody` from `http.mjs`.
-- [ ] **Done when:** P-9001 in `ok` mode returns 48930, 30 and 0.187, and P-9002 passes `dayChangePercent: 0` through.
+- [x] `fetch` to `{CRM_BASE_URL}/crm/portfolios/:id` with an abort timeout of `CRM_TIMEOUT_MS`. Never sends `?mode=`.
+- [x] CRM 404 or no matching account → 404 `not_found`; 5xx → 503; timeout → 504; incomplete → 502.
+- [x] `summary.mjs` replaces A's stub and returns `{ status, body }`, using `errorBody` from `http.mjs`.
+- [x] **Done when:** P-9001 in `ok` mode returns 48930, 30 and 0.187, and P-9002 passes `dayChangePercent: 0` through.
 
 ### B2. Cache (PLAN Step 6)
 - [ ] `cache.mjs`: `get` and `set` with `value`, `cachedAt` and `expiresAt`; the TTL comes from `CACHE_TTL_SECONDS`; the clock can be injected.

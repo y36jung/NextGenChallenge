@@ -101,12 +101,12 @@ Keep the calculation and mapping modules free of HTTP. Unit tests run against th
 
 ## Step 2: Task 4, auth (3 min)
 
-- [ ] Middleware runs before any route logic on protected paths.
-- [ ] On success it attaches the caller's identity to the request (fixed value for now).
-- [ ] Missing header → 401 `unauthorized`.
-- [ ] Malformed header (no `Bearer `, empty token) → 401, never a 500.
-- [ ] Wrong token → 401.
-- [ ] Valid token → passes through.
+- [x] Middleware runs before any route logic on protected paths.
+- [x] On success it attaches the caller's identity to the request (fixed value for now).
+- [x] Missing header → 401 `unauthorized`.
+- [x] Malformed header (no `Bearer `, empty token) → 401, never a 500.
+- [x] Wrong token → 401.
+- [x] Valid token → passes through.
 
 **Tests:** missing, malformed (`Token abc`), wrong token, valid token (identity attached).
 
@@ -142,13 +142,13 @@ Keep the calculation and mapping modules free of HTTP. Unit tests run against th
 
 ## Step 5: Task 1, CRM integration (10 min)
 
-- [ ] The CRM client calls `GET {CRM_BASE_URL}/crm/portfolios/:id` with an abort timeout. Never send `?mode=` from the backend.
-- [ ] Find the account by `acct_ref` in either nesting location.
-- [ ] Map to `portfolioId, clientId, label, currency, totalMarketValue, dayChangeAmount, dayChangePercent, totalReturnSinceInception, asOf`.
-- [ ] If any mapped field is missing or `null`, the mapping reports the record as incomplete. Check for `null` explicitly; never coerce it (`Number(null)`, `?? 0` and `* 1` all turn it into `0`).
-- [ ] CRM 404, or no matching `acct_ref` → 404 `not_found`.
-- [ ] CRM 5xx → 503 `crm_unavailable`. Timeout → 504 `crm_timeout`. Incomplete record → 502 `crm_incomplete`. None may crash or hang.
-- [ ] Keep the mapping as a pure function so it can be unit-tested with fixture payloads.
+- [x] The CRM client calls `GET {CRM_BASE_URL}/crm/portfolios/:id` with an abort timeout. Never send `?mode=` from the backend.
+- [x] Find the account by `acct_ref` in either nesting location.
+- [x] Map to `portfolioId, clientId, label, currency, totalMarketValue, dayChangeAmount, dayChangePercent, totalReturnSinceInception, asOf`.
+- [x] If any mapped field is missing or `null`, the mapping reports the record as incomplete. Check for `null` explicitly; never coerce it (`Number(null)`, `?? 0` and `* 1` all turn it into `0`).
+- [x] CRM 404, or no matching `acct_ref` → 404 `not_found`.
+- [x] CRM 5xx → 503 `crm_unavailable`. Timeout → 504 `crm_timeout`. Incomplete record → 502 `crm_incomplete`. None may crash or hang.
+- [x] Keep the mapping as a pure function so it can be unit-tested with fixture payloads.
 
 **Tests (unit, mapping):** standard shape, nested shape, incomplete record (`amt: null`, no `acct_nickname`) is rejected, account not first (`P-9002` returns 500, not P-9001's 48930).
 **Manual check:** run the CRM in each mode (`ok`, `missing`, `nested`, `error`, `timeout`) via `POST /__control`.

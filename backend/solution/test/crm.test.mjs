@@ -1,6 +1,9 @@
-import { test } from 'node:test';
+import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mapCrmRecord } from '../src/crm.mjs';
+import { createServer } from 'node:http';
+import { mapCrmRecord, fetchCrm } from '../src/crm.mjs';
+import { getPortfolioSummary } from '../src/summary.mjs';
+import { ERROR_CODES } from '../src/http.mjs';
 
 const account = (ref, nickname, amt, change, pct, inception) => ({
   acct_ref: ref,
@@ -218,4 +221,160 @@ test('the CRM payload is not modified', () => {
   const before = structuredClone(body);
   mapCrmRecord(body, 'P-9001');
   assert.deepEqual(body, before);
+});
+
+// ---- fetchCrm against a throwaway local HTTP server ----
+
+// Each request is answered according to `behavior`, which a test sets before calling.
+// behavior: { status, body } | { hang: true } | { hangBody: true } (headers sent, body never finished)
+const fake = { behavior: { status: 200, body: '{}' }, urls: [] };
+const server = createServer((req, res) => {
+  fake.urls.push(req.url);
+  const b = fake.behavior;
+  if (b.hang) return;
+  if (b.hangBody) {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.write('{"client_record":');
+    return;
+  }
+  res.writeHead(b.status, { 'Content-Type': 'application/json' });
+  res.end(b.body);
+});
+let baseUrl;
+
+before(async () => {
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  baseUrl = `http://127.0.0.1:${server.address().port}`;
+});
+after(async () => {
+  // Hanging requests keep sockets open; close them so node --test can exit.
+  server.closeAllConnections();
+  await new Promise(resolve => server.close(resolve));
+});
+
+const respond = (status, body) => { fake.behavior = { status, body: typeof body === 'string' ? body : JSON.stringify(body) }; };
+const callCrm = (id, timeoutMs = 1000) => fetchCrm(id, { baseUrl, timeoutMs });
+
+test('fetchCrm: ok payload maps P-9001 to 48930 / 30 / 0.187', async () => {
+  respond(200, payload([p9001(), p9002()]));
+  const result = await callCrm('P-9001');
+  assert.equal(result.ok, true);
+  assert.equal(result.value.totalMarketValue, 48930);
+  assert.equal(result.value.dayChangeAmount, 30);
+  assert.equal(result.value.totalReturnSinceInception, 0.187);
+});
+
+test('fetchCrm: P-9002 passes dayChangePercent 0 through', async () => {
+  respond(200, payload([p9001(), p9002()]));
+  const result = await callCrm('P-9002');
+  assert.equal(result.ok, true);
+  assert.equal(result.value.totalMarketValue, 500);
+  assert.equal(result.value.dayChangePercent, 0);
+});
+
+test('fetchCrm: CRM 404 is not_found', async () => {
+  respond(404, { error: 'not found' });
+  assert.deepEqual(await callCrm('P-NOPE'), { ok: false, reason: 'not_found', missing: [] });
+});
+
+test('fetchCrm: CRM 503 (and other non-OK statuses) is unavailable', async () => {
+  for (const status of [503, 500, 400]) {
+    respond(status, { error: 'down' });
+    assert.deepEqual(await callCrm('P-9001'), { ok: false, reason: 'unavailable' }, String(status));
+  }
+});
+
+test('fetchCrm: a CRM that never responds times out quickly', async () => {
+  fake.behavior = { hang: true };
+  const started = Date.now();
+  const result = await callCrm('P-9001', 50);
+  assert.deepEqual(result, { ok: false, reason: 'timeout' });
+  assert.ok(Date.now() - started < 1000, 'resolved in well under 1s');
+});
+
+test('fetchCrm: the timeout also covers reading the body', async () => {
+  fake.behavior = { hangBody: true };
+  const started = Date.now();
+  const result = await callCrm('P-9001', 50);
+  assert.deepEqual(result, { ok: false, reason: 'timeout' });
+  assert.ok(Date.now() - started < 1000, 'resolved in well under 1s');
+});
+
+test('fetchCrm: a refused connection is unavailable', async () => {
+  const closed = createServer();
+  await new Promise(resolve => closed.listen(0, '127.0.0.1', resolve));
+  const port = closed.address().port;
+  await new Promise(resolve => closed.close(resolve));
+  const result = await fetchCrm('P-9001', { baseUrl: `http://127.0.0.1:${port}`, timeoutMs: 1000 });
+  assert.deepEqual(result, { ok: false, reason: 'unavailable' });
+});
+
+test('fetchCrm: a body that is not JSON is incomplete', async () => {
+  respond(200, '<html>oops</html>');
+  const result = await callCrm('P-9001');
+  assert.equal(result.ok, false);
+  assert.equal(result.reason, 'incomplete');
+});
+
+test('fetchCrm: requests the right path and never sends ?mode=', async () => {
+  respond(200, payload([p9001()]));
+  fake.urls = [];
+  await callCrm('P-9001');
+  await callCrm('P 9/1');
+  assert.equal(fake.urls[0], '/crm/portfolios/P-9001');
+  assert.equal(fake.urls[1], '/crm/portfolios/P%209%2F1');
+  for (const url of fake.urls) {
+    assert.equal(new URL(url, 'http://x').searchParams.has('mode'), false, url);
+    assert.ok(!url.includes('?'), url);
+  }
+});
+
+test('fetchCrm: never throws, even if fetch itself throws synchronously', async () => {
+  const boom = () => { throw new Error('boom'); };
+  assert.deepEqual(await fetchCrm('P-9001', { baseUrl, timeoutMs: 50, fetch: boom }), { ok: false, reason: 'unavailable' });
+});
+
+// ---- getPortfolioSummary with an injected CRM client ----
+
+const stubCrm = result => async () => result;
+
+test('getPortfolioSummary: success is 200 with the mapped value', async () => {
+  const value = mapCrmRecord(payload([p9001()]), 'P-9001').value;
+  const calls = [];
+  const crm = async (id, opts) => { calls.push([id, opts]); return { ok: true, value }; };
+  const result = await getPortfolioSummary('P-9001', { crm });
+  assert.deepEqual(result, { status: 200, body: value });
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0][0], 'P-9001');
+  assert.equal(typeof calls[0][1].baseUrl, 'string');
+  assert.equal(typeof calls[0][1].timeoutMs, 'number');
+});
+
+for (const [reason, code, status] of [
+  ['not_found', 'not_found', 404],
+  ['unavailable', 'crm_unavailable', 503],
+  ['timeout', 'crm_timeout', 504],
+  ['incomplete', 'crm_incomplete', 502],
+]) {
+  test(`getPortfolioSummary: ${reason} is ${status} ${code}`, async () => {
+    const result = await getPortfolioSummary('P-9001', { crm: stubCrm({ ok: false, reason, missing: [] }) });
+    assert.equal(result.status, status);
+    assert.equal(result.status, ERROR_CODES[code]);
+    assert.equal(result.body.error, code);
+    assert.equal(typeof result.body.message, 'string');
+  });
+}
+
+test('getPortfolioSummary: incomplete message lists the missing fields', async () => {
+  const crm = stubCrm({ ok: false, reason: 'incomplete', missing: ['acct_nickname', 'curr_val.amt'] });
+  const result = await getPortfolioSummary('P-9001', { crm });
+  assert.equal(result.status, 502);
+  assert.match(result.body.message, /acct_nickname/);
+  assert.match(result.body.message, /curr_val\.amt/);
+});
+
+test('getPortfolioSummary: a client that throws becomes 503, not a crash', async () => {
+  const result = await getPortfolioSummary('P-9001', { crm: async () => { throw new Error('boom'); } });
+  assert.equal(result.status, 503);
+  assert.equal(result.body.error, 'crm_unavailable');
 });
